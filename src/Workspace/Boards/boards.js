@@ -12,12 +12,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const boardNameInput = document.getElementById("boardName");
     const boardError = document.getElementById("boardError");
 
+    async function loadBoards(){
+        try{
+            const response = await fetch("http://localhost:3000/api/v1/workspace/get-allboard", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if(!response.ok){
+                alert("Gagal mengambil board");
+            }
+
+            data.data.forEach(board => {
+                renderBoard(board.name);
+            })
+                    
+        }catch(err){
+            alert("Server error saat load board");
+        }
+    }
+
+
     btnCreate.addEventListener("click", () => {
         const name = boardNameInput.value.trim();
 
         if (name === "") {
-        boardError.innerText = "Nama board wajib diisi";
-        return;
+            boardError.innerText = "Nama board wajib diisi";
+            return;
         }
 
         boardError.innerText = "";
@@ -30,37 +56,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function createBoardAPI(name) {
         try {
-        const response = await fetch(
-            "http://localhost:3000/api/v1/workspace/create-board",
-            {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ name }),
+            const response = await fetch(
+                "http://localhost:3000/api/v1/workspace/create-board",
+                {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({ name }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.message || "Gagal membuat board");
+                return;
             }
-        );
 
-        const data = await response.json();
+            renderBoard(data.data.name);
 
-        if (!response.ok) {
-            alert(data.message || "Gagal membuat board");
-            return;
-        }
+            boardNameInput.value = "";
+            alert("Membuat board berhasil");
 
-        renderBoard(data.data.name);
-
-        boardNameInput.value = "";
-        alert("Membuat board berhasil");
-
-        bootstrap.Modal
-            .getInstance(document.getElementById("createBoardModal"))
-            .hide();
+            bootstrap.Modal
+                .getInstance(document.getElementById("createBoardModal"))
+                .hide();
 
         } catch (err) {
-        alert("Server error, silakan coba lagi nanti");
-        console.error(err);
+            alert("Server error, silakan coba lagi nanti");
+            console.error(err);
         }
     }
 
