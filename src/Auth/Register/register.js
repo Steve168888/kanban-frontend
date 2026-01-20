@@ -97,10 +97,20 @@ async function registerAPI(name, email, password) {
 		emailError.innerHTML = "";
 		passwordError.innerHTML = "";
 
-		alert("Register berhasil");
+		Swal.fire({
+			icon: "success",
+			title: "Registrasi berhasil",
+			text: "Akun kamu berhasil dibuat. Silakan login untuk melanjutkan.",
+			confirmButtonText: "Login",
+		}).then(() => {
+			window.location.href = "../Login/login.html";
+		});
 
     } catch (err) {
-        alert("Server error, silakan coba lagi nanti");
-        console.error(err);
+		Swal.fire({
+			icon: "error",
+			title: "Registrasi gagal",
+			text: "Email sudah terdaftar atau data tidak valid.",
+		});
     }
 }

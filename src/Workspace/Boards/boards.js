@@ -1,16 +1,14 @@
-    // AUTH GUARD
-    const token = localStorage.getItem("token");
-    if (!token) {
+// AUTH GUARD
+const token = localStorage.getItem("token");
+if (!token) {
     window.location.href = "../../Auth/Login/login.html";
-    }
+}
 
-    // DOM READY
-    document.addEventListener("DOMContentLoaded", () => {
+// DOM READY
+document.addEventListener("DOMContentLoaded", () => {
 
-
-    // STATE
+    // GLOBAL STATE
     let selectedBoardId = null;
-
 
     // DOM ELEMENTS
     const boardGrid = document.getElementById("boardGrid");
@@ -26,9 +24,19 @@
     const editBoardError = document.getElementById("editBoardError");
     const btnUpdateBoard = document.getElementById("btnUpdateBoard");
 
+    // USER INFO
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+        document.querySelector("#userName").innerText = user.name;
+    }
+
+
+
     // API FUNCTIONS
     async function loadBoards() {
         try {
+        boardGrid.innerHTML = "";
+
         const response = await fetch(
             "http://localhost:3000/api/v1/workspace/get-allboard",
             {
@@ -40,7 +48,11 @@
 
         const data = await response.json();
         if (!response.ok) {
-            alert("Gagal mengambil board");
+            Swal.fire({
+                icon: "error",
+                title: "Gagal memuat board",
+                text: data.message || "Tidak dapat mengambil data board",
+            });
             return;
         }
 
@@ -49,7 +61,11 @@
         });
 
         } catch (err) {
-        alert("Server error saat load board");
+            Swal.fire({
+                icon: "error",
+                title: "Server error",
+                text: "Terjadi kesalahan saat memuat board",
+            });
         }
     }
 
@@ -69,19 +85,35 @@
 
         const data = await response.json();
         if (!response.ok) {
-            alert(data.message || "Gagal membuat board");
+            Swal.fire({
+                icon: "error",
+                title: "Gagal",
+                text: data.message || "Gagal membuat board",
+            });
             return;
         }
 
-        renderBoard(data.data._id, data.data.name);
+        renderBoard(data.data._id, data.data.name, "top");
         boardNameInput.value = "";
 
         bootstrap.Modal
             .getInstance(document.getElementById("createBoardModal"))
             .hide();
+        
+        Swal.fire({
+            icon: "success",
+            title: "Berhasil",
+            text: "Board berhasil dibuat",
+            timer: 1500,
+            showConfirmButton: false,
+        });
 
         } catch (err) {
-        alert("Server error");
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Terjadi kesalahan server",
+            });
         }
     }
 
@@ -93,87 +125,123 @@
         }
 
         try {
-        const response = await fetch(
-            `http://localhost:3000/api/v1/workspace/update-board/${selectedBoardId}`,
-            {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ name: newName }),
+            const response = await fetch(
+                `http://localhost:3000/api/v1/workspace/update-board/${selectedBoardId}`,
+                {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({ name: newName }),
+                }
+            );
+
+            if (!response.ok) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal",
+                    text: "Board gagal diupdate",
+                });
+                return;
             }
-        );
 
-        if (!response.ok) {
-            alert("Gagal update board");
-            return;
-        }
+            const card = document.querySelector(
+                `.card[data-id="${selectedBoardId}"]`
+            );
+            card.querySelector(".board-name").innerText = newName;
 
-        const card = document.querySelector(
-            `.card[data-id="${selectedBoardId}"]`
-        );
-        card.querySelector(".board-name").innerText = newName;
+            bootstrap.Modal.getInstance(editBoardModalEl).hide();
 
-        bootstrap.Modal.getInstance(editBoardModalEl).hide();
+            Swal.fire({
+                icon: "success",
+                title: "Berhasil",
+                text: "Board berhasil diupdate",
+                timer: 1500,
+                showConfirmButton: false,
+            });
 
         } catch (err) {
-        alert("Server error");
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Terjadi kesalahan server",
+            });
         }
     }
 
     async function deleteBoard(boardId, cardEl) {
         try {
-        const response = await fetch(
-            `http://localhost:3000/api/v1/workspace/delete-board/${boardId}`,
-            {
-            method: "DELETE",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-            },
-            }
-        );
+            const response = await fetch(
+                `http://localhost:3000/api/v1/workspace/delete-board/${boardId}`,
+                {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+                }
+            );
 
-        if (!response.ok) {
-            alert("Gagal menghapus board");
-            return;
-        }
+            if (!response.ok) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal",
+                    text: "Board gagal dihapus",
+                });
+                return;
+                }
 
-        cardEl.closest(".col-lg-3").remove();
+                cardEl.closest(".col-lg-3").remove();
+
+            Swal.fire({
+                icon: "success",
+                title: "Berhasil",
+                text: "Board berhasil dihapus",
+                timer: 1500,
+                showConfirmButton: false,
+            });
 
         } catch (err) {
-        alert("Server error");
+            Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Terjadi kesalahan server",
+            });
         }
     }
 
-    // RENDER
-    function renderBoard(id, name) {
+    // RENDER FUNCTIONS
+    function renderBoard(id, name, position = "bottom") {
         const html = `
-        <div class="col-lg-3 col-md-4 col-sm-6">
-            <div class="card shadow-sm h-100" data-id="${id}">
-            <div class="card-body position-relative">
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="card shadow-sm h-100" data-id="${id}">
+                <div class="card-body position-relative">
 
-                <div class="dropdown position-absolute top-0 end-0 m-2">
-                <button class="btn btn-sm" data-bs-toggle="dropdown">⋮</button>
-                <ul class="dropdown-menu">
-                    <li><button class="dropdown-item btn-update">Update</button></li>
-                    <li><button class="dropdown-item btn-delete text-danger">Delete</button></li>
-                </ul>
+                    <div class="dropdown position-absolute top-0 end-0 m-2">
+                    <button class="btn btn-sm" data-bs-toggle="dropdown">⋮</button>
+                    <ul class="dropdown-menu">
+                        <li><button class="dropdown-item btn-update">Update</button></li>
+                        <li><button class="dropdown-item btn-delete text-danger">Delete</button></li>
+                    </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-center py-5">
+                    <h5 class="board-name">${name}</h5>
+                    </div>
+
                 </div>
-
-                <div class="d-flex justify-content-center py-5">
-                <h5 class="board-name">${name}</h5>
                 </div>
-
             </div>
-            </div>
-        </div>
-        `;
-        boardGrid.insertAdjacentHTML("beforeend", html);
+            `;
+        if (position === "top") {
+            boardGrid.insertAdjacentHTML("afterbegin", html);
+        } else {
+            boardGrid.insertAdjacentHTML("beforeend", html);
+        }
     }
 
 
-    // EVENTS
+    // EVENT LISTENERS
     btnCreate.addEventListener("click", () => {
         const name = boardNameInput.value.trim();
         if (!name) {
@@ -185,7 +253,15 @@
     });
 
     btnUpdateBoard.addEventListener("click", () => {
-        updateBoard();
+    Swal.fire({
+        title: "Yakin update board?",
+        icon: "question",
+        showCancelButton: true
+    }).then((res) => {
+            if (res.isConfirmed) {
+            updateBoard();
+            }
+        });
     });
 
     boardGrid.addEventListener("click", (e) => {
@@ -203,15 +279,53 @@
         new bootstrap.Modal(editBoardModalEl).show();
         }
 
-        if (deleteBtn) {
-        const card = deleteBtn.closest(".card");
-        if (confirm("Yakin mau hapus board ini?")) {
-            deleteBoard(card.dataset.id, card);
-        }
+         if (deleteBtn) {
+            const card = deleteBtn.closest(".card");
+            const boardId = card.dataset.id;
+
+            Swal.fire({
+                title: "Yakin mau hapus board?",
+                text: "Board yang dihapus tidak bisa dikembalikan",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Ya, hapus",
+                cancelButtonText: "Batal"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    deleteBoard(boardId, card);
+                }
+            });
         }
     });
 
-    // INIT
+    btnLogout.addEventListener("click", () => {
+        Swal.fire({
+            title: "Logout?",
+            text: "Kamu akan keluar dari aplikasi",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Ya, logout",
+            cancelButtonText: "Batal",
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+
+            Swal.fire({
+                icon: "success",
+                title: "Berhasil logout",
+                text: "Sampai jumpa",
+                timer: 1200,
+                showConfirmButton: false,
+            }).then(() => {
+                window.location.href = "../../Auth/Login/login.html";
+            });
+            }
+        });
+    });
+
+    
     loadBoards();
 
-    });
+});

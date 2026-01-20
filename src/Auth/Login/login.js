@@ -69,6 +69,7 @@ async function loginAPI(email, password) {
 
         const token = data.token;
         localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(data.data));
 
         emailInput.value = "";
         passwordInput.value = "";
@@ -76,8 +77,16 @@ async function loginAPI(email, password) {
         emailError.innerHTML = "";
         passwordError.innerHTML = "";
 
-        alert("Login berhasil");
-        window.location.href = "../../Workspace/Boards/boards.html";
+        Swal.fire({
+            icon: "success",
+            title: "Login berhasil",
+            text: "Selamat datang!",
+            confirmButtonText: "OK"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "../../Workspace/Boards/boards.html";
+            }
+        });
 
     }catch(err) {
         alert("Server error, silahkan coba lagi nanti");
