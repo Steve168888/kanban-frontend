@@ -8,11 +8,15 @@ if (!token) {
 document.addEventListener("DOMContentLoaded", () => {
 
     // GLOBAL STATE
+    let activeTab = "my";
     let selectedBoardId = null;
 
     // DOM ELEMENTS
     const boardGrid = document.getElementById("boardGrid");
 
+    // Tabs
+    const tabMyBoards = document.getElementById("tabMyBoards");
+    const tabTeamBoards = document.getElementById("tabTeamBoards");
     // create board
     const btnCreate = document.getElementById("btnCreate");
     const boardNameInput = document.getElementById("boardName");
@@ -30,6 +34,36 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelector("#userName").innerText = user.name;
     }
 
+
+    function updateTabUI(){
+        if(activeTab === "my"){
+                tabMyBoards.classList.add("fw-semibold", "border-bottom", "border-primary", "text-primary");
+                tabMyBoards.classList.remove("text-muted");
+
+                tabTeamBoards.classList.remove("fw-semibold", "border-bottom", "border-primary", "text-primary");
+                tabTeamBoards.classList.add("text-muted");
+        } else {
+                tabTeamBoards.classList.add("fw-semibold", "border-bottom", "border-primary", "text-primary");
+                tabTeamBoards.classList.remove("text-muted");
+
+                tabMyBoards.classList.remove("fw-semibold", "border-bottom", "border-primary", "text-primary");
+                tabMyBoards.classList.add("text-muted");
+        }
+        
+    }
+
+    function renderContentByTab() {
+        if (activeTab === "my") {
+            loadBoards();
+        } else {
+            boardGrid.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                    <h5>Belum ada Team Board</h5>
+                    <p>Buat team board pertama kamu</p>
+                </div>
+            `;
+        }
+    }
 
 
     // API FUNCTIONS
@@ -68,6 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
     }
+
 
     async function createBoardAPI(name) {
         try {
@@ -251,6 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
         boardError.innerText = "";
         createBoardAPI(name);
     });
+    
 
     btnUpdateBoard.addEventListener("click", () => {
     Swal.fire({
@@ -298,6 +334,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    tabMyBoards.addEventListener("click", () => {
+        if(activeTab === "my")
+            return;
+        activeTab = "my";
+        updateTabUI();
+        renderContentByTab();
+    });
+
+    tabTeamBoards.addEventListener("click", () => {
+        if(activeTab === "team")
+            return;
+        activeTab = "team";
+        updateTabUI();
+        renderContentByTab();
+    });
+
     btnLogout.addEventListener("click", () => {
         Swal.fire({
             title: "Logout?",
@@ -326,6 +378,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     
-    loadBoards();
+    updateTabUI();
+    renderContentByTab();
 
 });
