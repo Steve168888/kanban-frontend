@@ -8,8 +8,13 @@ if (!token) {
 document.addEventListener("DOMContentLoaded", () => {
 
     // GLOBAL STATE
-    let activeTab = "my";
+    let activeTab = localStorage.getItem("activeTab") || "my";
     let selectedBoardId = null;
+    let myBoards = [];
+    let teamBoards = [];
+    let originalBoardName = "";
+    let selectedMembers = [];
+
 
     // DOM ELEMENTS
     const boardGrid = document.getElementById("boardGrid");
@@ -17,8 +22,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Tabs
     const tabMyBoards = document.getElementById("tabMyBoards");
     const tabTeamBoards = document.getElementById("tabTeamBoards");
+
     // create board
     const btnCreate = document.getElementById("btnCreate");
+    const btnSubmitCreateBoard = document.getElementById("btnSubmitCreateBoard");
     const boardNameInput = document.getElementById("boardName");
     const boardError = document.getElementById("boardError");
 
@@ -27,6 +34,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const editBoardNameInput = document.getElementById("editBoardName");
     const editBoardError = document.getElementById("editBoardError");
     const btnUpdateBoard = document.getElementById("btnUpdateBoard");
+
+
+    // show team modal
+    const createBoardModalEl = document.getElementById("createBoardModal");
+    const memberField = document.getElementById("memberField");
+    const createBoardTitle = document.getElementById("createBoardTitle");
+
+    // search 
+    const memberSearchInput = document.getElementById("memberSearchInput");
+    const memberSearchResult = document.getElementById("memberSearchResult");
+    const selectedMembersContainer = document.getElementById("selectedMembersContainer");
 
     // USER INFO
     const user = JSON.parse(localStorage.getItem("user"));
@@ -52,33 +70,102 @@ document.addEventListener("DOMContentLoaded", () => {
         
     }
 
+
     function renderContentByTab() {
         if (activeTab === "my") {
-            loadBoards();
-        } else {
-            boardGrid.innerHTML = `
-                <div class="col-12 text-center text-muted py-5">
-                    <h5>Belum ada Team Board</h5>
-                    <p>Buat team board pertama kamu</p>
-                </div>
-            `;
+            loadMyBoards();
+        } else if(activeTab === "team"){
+            loadTeamBoards();
         }
     }
 
 
+    function renderSearchResults(users) {
+        memberSearchResult.innerHTML = "";
+
+        if(users.length === 0) {
+            memberSearchResult.innerHTML = `
+                <div class="list-group-item text-muted small">
+                    User tidak ditemukan
+                </div>
+            `;
+            memberSearchResult.classList.remove("d-none");
+            return;
+        }
+
+        users.forEach(user => {
+            const item = document.createElement("button");
+            item.type = "button";
+            item.className = "list-group-item list-group-item-action";
+
+            item.innerHTML = `
+                <span class="small">${user.name}</span>
+                <span class="text-muted small"> · ${user.email}</span>
+            `;
+
+            item.addEventListener("click", () => {
+                addMember(user);
+            });
+
+            memberSearchResult.appendChild(item);
+        });
+
+        memberSearchResult.classList.remove("d-none");
+    }
+
+    function addMember(user) {
+        if (selectedMembers.some(u => u._id === user._id)) return;
+        selectedMembers.push(user);
+
+        memberSearchInput.value = "";
+
+        memberSearchResult.innerHTML = "";
+        memberSearchResult.classList.add("d-none");
+
+        renderSelectedMembers();
+    }
+
+    function renderSelectedMembers() {
+        selectedMembersContainer.innerHTML = "";
+
+        selectedMembers.forEach(user => {
+            const chip = document.createElement("span");
+            chip.className = "badge bg-primary d-inline-flex align-items-center gap-1 px-2 py-0 fs-6 fw-normal";
+
+            chip.innerHTML = `<span>${user.name}</span>
+                <button type="button" class="btn-close btn-close-white btn-sm" 
+                    style="transform: scale(0.6);" aria-label="Remove">
+                </button>`;
+
+            chip.querySelector("span").onclick = () => {
+            removeMember(user._id);
+            };
+
+            selectedMembersContainer.appendChild(chip);
+        });
+    }
+
+    function removeMember(userId) {
+        selectedMembers = selectedMembers.filter(u => u._id !== userId);
+        renderSelectedMembers();
+    }
+
+
+
     // API FUNCTIONS
-    async function loadBoards() {
+    async function loadMyBoards() {
         try {
         boardGrid.innerHTML = "";
 
         const response = await fetch(
-            "http://localhost:3000/api/v1/workspace/get-allboard",
+            "http://localhost:3000/api/v1/workspace/get-allmyboards",
             {
             headers: {
                 "Authorization": `Bearer ${token}`,
             },
             }
         );
+        
 
         const data = await response.json();
         if (!response.ok) {
@@ -88,6 +175,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 text: data.message || "Tidak dapat mengambil data board",
             });
             return;
+        }
+
+        myBoards = data.data || [];
+         if (myBoards.length === 0) {
+             boardGrid.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                <h5>Belum ada Board</h5>
+                <p>Buat board pertama kamu</p>
+                </div>
+            `;
         }
 
         data.data.forEach(board => {
@@ -103,45 +200,104 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    async function loadTeamBoards() {
+        try{
+            boardGrid.innerHTML = "";
+
+            const response = await fetch(
+            "http://localhost:3000/api/v1/workspace/get-allteamboards",
+                {
+                    headers: {
+                    Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            const data = await response.json();
+            if (!response.ok) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal memuat team board",
+                    text: data.message || "Tidak dapat mengambil data team board",
+                });
+                return;
+            }
+
+            teamBoards = data.data || [];
+
+            if (teamBoards.length === 0) {
+            boardGrid.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                <h5>Belum ada Team Board</h5>
+                <p>Kamu belum tergabung di team manapun</p>
+                </div>
+            `;
+            return;
+            }
+
+            teamBoards.forEach(board => {
+            renderBoard(board._id, board.name, "team");
+            });
+
+        }catch (err) {
+                Swal.fire({
+                icon: "error",
+                title: "Server error",
+                text: "Terjadi kesalahan saat memuat team board",
+                });
+        }
+    }
+
 
     async function createBoardAPI(name) {
-        try {
-        const response = await fetch(
-            "http://localhost:3000/api/v1/workspace/create-board",
-            {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ name }),
+        try{
+            const payload = {
+                name,
+                type: activeTab,
+                members: activeTab === "team" ? selectedMembers.map(u => u._id) : []       
+            };
+
+            const response = await fetch(
+                "http://localhost:3000/api/v1/workspace/create-board",
+                {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+                }
+            );
+
+            const data = await response.json();
+            if (!response.ok) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal",
+                    text: data.message || "Gagal membuat board",
+                });
+                return; 
             }
-        );
 
-        const data = await response.json();
-        if (!response.ok) {
+            boardNameInput.value = "";
+            boardError.innerText = "";
+            selectedMembers = [];
+            selectedMembersContainer.innerHTML = "";
+
+            renderBoard(data.data._id, data.data.name, "top");
+            boardNameInput.value = "";
+
+            bootstrap.Modal
+                .getInstance(document.getElementById("createBoardModal"))
+                .hide();
+            
             Swal.fire({
-                icon: "error",
-                title: "Gagal",
-                text: data.message || "Gagal membuat board",
+                icon: "success",
+                title: "Berhasil",
+                text: "Board berhasil dibuat",
+                timer: 1500,
+                showConfirmButton: false,
             });
-            return;
-        }
-
-        renderBoard(data.data._id, data.data.name, "top");
-        boardNameInput.value = "";
-
-        bootstrap.Modal
-            .getInstance(document.getElementById("createBoardModal"))
-            .hide();
-        
-        Swal.fire({
-            icon: "success",
-            title: "Berhasil",
-            text: "Board berhasil dibuat",
-            timer: 1500,
-            showConfirmButton: false,
-        });
 
         } catch (err) {
             Swal.fire({
@@ -152,11 +308,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+
     async function updateBoard() {
         const newName = editBoardNameInput.value.trim();
         if (!newName) {
         editBoardError.innerText = "Nama board wajib diisi";
         return;
+        }
+
+        if(newName === originalBoardName){
+            editBoardError.innerText = "Nama board tidak berubah"
+            return;
         }
 
         try {
@@ -245,6 +407,29 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+
+    async function fetchSearchUsers(keyword) {
+        try {
+            const response = await fetch(
+                `http://localhost:3000/api/v1/workspace/users-search?q=${encodeURIComponent(keyword)}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            const data = await response.json();
+            return data.data || []; 
+
+        } catch (error) {
+            console.error("FETCH SEARCH USER ERROR:", error);
+            return [];
+        }
+    }
+
+
     // RENDER FUNCTIONS
     function renderBoard(id, name, position = "bottom") {
         const html = `
@@ -278,6 +463,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // EVENT LISTENERS
     btnCreate.addEventListener("click", () => {
+         const name = boardNameInput.value.trim();
+        if (!name) return;
+
+        createBoardAPI(name);
+    })
+
+    btnSubmitCreateBoard.addEventListener("click", () => {
         const name = boardNameInput.value.trim();
         if (!name) {
         boardError.innerText = "Nama board wajib diisi";
@@ -286,7 +478,6 @@ document.addEventListener("DOMContentLoaded", () => {
         boardError.innerText = "";
         createBoardAPI(name);
     });
-    
 
     btnUpdateBoard.addEventListener("click", () => {
     Swal.fire({
@@ -308,8 +499,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const card = updateBtn.closest(".card");
         selectedBoardId = card.dataset.id;
 
-        editBoardNameInput.value =
-            card.querySelector(".board-name").innerText;
+        editBoardNameInput.value = card.querySelector(".board-name").innerText;
+
+        originalBoardName = editBoardNameInput.value;
 
         editBoardError.innerText = "";
         new bootstrap.Modal(editBoardModalEl).show();
@@ -334,10 +526,41 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    createBoardModalEl.addEventListener("show.bs.modal", () => {
+
+        memberField.classList.add("d-none");
+        createBoardTitle.innerText = "Create Board";
+
+        if (activeTab === "team") {
+            memberField.classList.remove("d-none");
+            createBoardTitle.innerText = "Create Team Board";
+        }
+    })
+
+
+    memberSearchInput.addEventListener("input", async (e) => {
+        const keyword = e.target.value.trim();
+
+        if (keyword.length < 2) {
+            memberSearchResult.classList.add("d-none");
+            memberSearchResult.innerHTML = "";
+            return;
+        }
+
+        const result = await fetchSearchUsers(keyword);
+
+        memberSearchResult.classList.remove("d-none");
+
+        renderSearchResults(result);
+    });
+
+
+
     tabMyBoards.addEventListener("click", () => {
         if(activeTab === "my")
             return;
         activeTab = "my";
+        localStorage.setItem("activeTab", "my");
         updateTabUI();
         renderContentByTab();
     });
@@ -346,6 +569,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if(activeTab === "team")
             return;
         activeTab = "team";
+        localStorage.setItem("activeTab", "team");
         updateTabUI();
         renderContentByTab();
     });
@@ -363,6 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             localStorage.removeItem("token");
             localStorage.removeItem("user");
+            localStorage.removeItem("activeTab");
 
             Swal.fire({
                 icon: "success",

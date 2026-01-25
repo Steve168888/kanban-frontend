@@ -21,15 +21,15 @@
 
 		<div class="flex-grow-1 overflow-auto px-4 py-4">
 			<!-- TAB MENU -->
-			<div class="mb-3">
-				<div class="d-flex justify-content-between align-items-center">
-					<div class="d-flex align-items-center gap-4">
-						<span id="tabMyBoards" class="fw-semibold pb-2 border-bottom border-primary text-primary" style="cursor: pointer;">My Boards</span>
-						<span id="tabTeamBoards" class="pb-2 text-muted" style="cursor: pointer;">Team Boards</span>
+				<div class="mb-3">
+					<div class="d-flex justify-content-between align-items-center">
+						<div class="d-flex align-items-center gap-4">
+							<span id="tabMyBoards" class="fw-semibold pb-2 border-bottom border-primary text-primary" style="cursor: pointer;">My Boards</span>
+							<span id="tabTeamBoards" class="pb-2 text-muted" style="cursor: pointer;">Team Boards</span>
+						</div>
+						<button id="btnCreate" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createBoardModal">+ Create Board</button>
 					</div>
-					<button id="btnCreate" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createBoardModal">+ Create Board</button>
 				</div>
-			</div>
 			 
 			<!-- GRID BOARDS -->
 				<div class="row g-4 mt-1" id="boardGrid"> 
@@ -49,7 +49,7 @@
 			<div class="modal-content">
 
 				<div class="modal-header">
-					<h6 class="modal-title">Create Board</h6>
+					<h6 id="createBoardTitle" class="modal-title">Create Board</h6>
 					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 				</div>
 
@@ -59,11 +59,30 @@
 						<input  id="boardName" type="text" class="form-control" placeholder="Project A"/>
 						<small id="boardError" class="text-danger"></small>
 					</div>
+
+					<!-- ONLY FOR TEAM 	-->	
+					<div id="memberField" class="mb-3 d-none position-relative">
+						<label class="form-label">
+							Add Member <span class="text-muted">(optional)</span>
+						</label>
+						<input id="memberSearchInput" type="text" class="form-control" placeholder="Search user by email..." autocomplete="off">
+
+						<!-- SEARCH RESULT -->
+						<div id="memberSearchResult" class="list-group position-absolute w-100 mt-1 d-none" style="z-index: 1056;"> 
+							<!-- hasil search disini nanti -->
+						</div>
+
+						<!-- SELECTED MEMBERS -->
+						<div id="selectedMembersContainer" class="mt-2 d-flex flex-wrap gap-2">
+							<!-- chip member terpilih disini nanti -->
+						</div>
+						    <small class="text-muted d-block mt-1">Kamu bisa menambahkan member nanti</small>
+					</div>
 				</div>
 
 				<div class="modal-footer d-flex justify-content-between">
 					<button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-					<button id="btnCreate" type="button" class="btn btn-primary">Create</button>
+					<button id="btnSubmitCreateBoard" type="button" class="btn btn-primary">Create</button>
 				</div>
 
 			</div>
