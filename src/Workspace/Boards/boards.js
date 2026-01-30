@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     style="transform: scale(0.6);" aria-label="Remove">
                 </button>`;
 
-            chip.querySelector("span").onclick = () => {
+            chip.querySelector("button").onclick = () => {
             removeMember(user._id);
             };
 
@@ -290,6 +290,8 @@ document.addEventListener("DOMContentLoaded", () => {
             bootstrap.Modal
                 .getInstance(document.getElementById("createBoardModal"))
                 .hide();
+
+            renderContentByTab()
             
             Swal.fire({
                 icon: "success",
@@ -386,9 +388,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     text: "Board gagal dihapus",
                 });
                 return;
-                }
+            }
 
-                cardEl.closest(".col-lg-3").remove();
+            renderContentByTab();
 
             Swal.fire({
                 icon: "success",
@@ -462,12 +464,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // EVENT LISTENERS
-    btnCreate.addEventListener("click", () => {
-         const name = boardNameInput.value.trim();
-        if (!name) return;
+    createBoardModalEl.addEventListener("show.bs.modal", () => {
+        boardNameInput.value = "";
+        boardError.innerText = "";
 
-        createBoardAPI(name);
-    })
+        selectedMembers = [];
+        selectedMembersContainer.innerHTML = "";
+    });
 
     btnSubmitCreateBoard.addEventListener("click", () => {
         const name = boardNameInput.value.trim();
@@ -553,7 +556,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderSearchResults(result);
     });
-
 
 
     tabMyBoards.addEventListener("click", () => {
