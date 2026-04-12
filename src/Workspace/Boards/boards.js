@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabTeamBoards = document.getElementById("tabTeamBoards");
 
     // create board
-    const btnCreate = document.getElementById("btnCreate");
+    // const btnCreate = document.getElementById("btnCreate");
     const btnSubmitCreateBoard = document.getElementById("btnSubmitCreateBoard");
     const boardNameInput = document.getElementById("boardName");
     const boardError = document.getElementById("boardError");
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnUpdateBoard = document.getElementById("btnUpdateBoard");
 
 
-    // show team modal
+    // show modal
     const createBoardModalEl = document.getElementById("createBoardModal");
     const memberField = document.getElementById("memberField");
     const createBoardTitle = document.getElementById("createBoardTitle");
@@ -165,8 +165,13 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             }
         );
-        
 
+        if(response.status === 401){
+            localStorage.removeItem("token");
+            window.location.href = "../../Auth/Login/login.html";
+            return;
+        }
+        
         const data = await response.json();
         if (!response.ok) {
             Swal.fire({
@@ -213,6 +218,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             );
 
+            if(response.status === 401){
+                localStorage.removeItem("token");
+                window.location.href = "../../Auth/Login/login.html";
+                return;
+            }
+
             const data = await response.json();
             if (!response.ok) {
                 Swal.fire({
@@ -257,15 +268,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 members: activeTab === "team" ? selectedMembers.map(u => u._id) : []       
             };
 
-            const response = await fetch(
-                "http://localhost:3000/api/v1/workspace/create-board",
+            const response = await fetch("http://localhost:3000/api/v1/workspace/create-board",
                 {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
-                },
-                body: JSON.stringify(payload),
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(payload),
                 }
             );
 
@@ -499,18 +509,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const deleteBtn = e.target.closest(".btn-delete");
 
         if (updateBtn) {
-        const card = updateBtn.closest(".card");
-        selectedBoardId = card.dataset.id;
+            const card = updateBtn.closest(".card");
+            selectedBoardId = card.dataset.id;
 
-        editBoardNameInput.value = card.querySelector(".board-name").innerText;
+            editBoardNameInput.value = card.querySelector(".board-name").innerText;
 
-        originalBoardName = editBoardNameInput.value;
+            originalBoardName = editBoardNameInput.value;
 
-        editBoardError.innerText = "";
-        new bootstrap.Modal(editBoardModalEl).show();
+            editBoardError.innerText = "";
+            new bootstrap.Modal(editBoardModalEl).show();
+            return;
         }
 
-         if (deleteBtn) {
+        if (deleteBtn) {
             const card = deleteBtn.closest(".card");
             const boardId = card.dataset.id;
 
@@ -526,7 +537,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     deleteBoard(boardId, card);
                 }
             });
+            return;
         }
+
+         // KLIK BOARD PINDAH KE KANBAN
+
+        if (e.target.closest(".dropdown")) {
+            return;
+        }
+        const card = e.target.closest(".card");
+        if (!card) return;
+
+        const boardId = card.dataset.id;
+        window.location.href = `../Kanban/kanban.html?id=${boardId}`;
     });
 
     createBoardModalEl.addEventListener("show.bs.modal", () => {
