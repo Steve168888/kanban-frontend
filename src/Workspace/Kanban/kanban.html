@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <title>Kanban</title>
 </head>
 <body class="bg-light">
@@ -22,11 +23,16 @@
 				<button id="btnCreateKanban" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createKanbanModal">+ Create Kanban</button>
 			</div>
 
-            <div class="row g-4 mt-1" id="kanbanContainer">
+            <div class="d-flex mt-4 gap-3 overflow-auto" id="kanbanContainer">
                 <!-- Kolom kanban akan muncul di sini -->
                 
             </div>
 		</div>
+	</div>
+
+    <!-- Footer -->
+	<div class="px-4 py-3 border-top flex-shrink-0">
+		<button id="btnBack" class="btn btn-danger btn-sm">Back</button>
 	</div>
 
     <!-- MODAL CREATE KANBAN -->
@@ -50,6 +56,51 @@
 				<div class="modal-footer d-flex justify-content-between">
 					<button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
 					<button id="btnSubmitCreateKanban" type="button" class="btn btn-primary">Create</button>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+	<!-- MODAL ADD NOTES -->
+	<div class="modal fade" id="taskModal" tabindex="-1">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+
+				<div class="modal-header">
+					<h5 class="modal-title" id="taskModalTitle">Task</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-6 border-end">
+                            <h6 class="fw-bold mb-3">Description</h6>
+                            <textarea id="taskContent" class="form-control" rows="12" placeholder="Write project notes..."></textarea>
+                        </div>
+
+                        <div class="col-6">
+                            <h6 class="fw-bold mb-3">Checklist</h6>
+                            <div id="checklistContainer"></div>
+
+                            <div id="checklistInputContainer" class="mt-3"></div>
+
+
+                            <button id="btnAddChecklist" class="btn btn-outline-primary btn-sm mt-3">+ Add Checklist</button>
+
+                            <div class="mt-4">
+                                <div class="progress">
+                                    <div id="progressBar" class="progress-bar"></div>
+                                </div>
+
+                                <small id="progressText" class="text-muted"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+				<div class="modal-footer">
+					<button id="btnSaveTask" class="btn btn-primary">Save</button>
 				</div>
 
 			</div>

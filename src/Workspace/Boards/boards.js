@@ -602,11 +602,11 @@ document.addEventListener("DOMContentLoaded", () => {
     btnLogout.addEventListener("click", () => {
         Swal.fire({
             title: "Logout?",
-            text: "Kamu akan keluar dari aplikasi",
+            text: "Are you sure you want to log out?",
             icon: "question",
             showCancelButton: true,
-            confirmButtonText: "Ya, logout",
-            cancelButtonText: "Batal",
+            confirmButtonText: "Log Out",
+            cancelButtonText: "Cancel",
         }).then((result) => {
             if (result.isConfirmed) {
 
